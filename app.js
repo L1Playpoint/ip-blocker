@@ -8,8 +8,12 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const NodeCache = require("node-cache");
+// const NodeCache = require("node-cache");
 // const customCache = new NodeCache();
+const morgan = require("morgan");
+const IPData = require("ipdata").default;
+
+const ipdata = new IPData(process.env.IPDATA_API_KEY);
 
 /**
  * * @setups => application setups
@@ -48,6 +52,7 @@ const apiLimiter = rateLimit({
  * * @routes => application routes
  */
 app
+  .use(morgan("dev"))
   .get("/", apiLimiter, csrfProtection, (req, res) => {
     const csrfToken = req.csrfToken();
 
@@ -65,10 +70,21 @@ app
    * * Note: "Call "/" to get the CSRF-Token" once and set to
    * * localStorage or Cookie in client side.
    */
-  .post("/ip", parseForm, csrfProtection, (req, res) => {
-    res.json({
-      body: req.body,
-    });
+  .post("/ip", parseForm, csrfProtection, async (req, res) => {
+    try {
+      const ipResponse = await ipdata.lookup();
+
+      res.json({
+        ip: ipResponse.ip,
+        country: ipResponse.country_name,
+        status: "Neutral"
+      });
+      // res.json({
+      //   body: req.body,
+      // });
+    } catch (error) {
+      console.log(error);
+    }
   })
   .get("*", (req, res) =>
     res.json({
