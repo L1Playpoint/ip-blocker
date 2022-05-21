@@ -74,14 +74,20 @@ app
     try {
       const ipResponse = await ipdata.lookup();
 
-      res.json({
-        ip: ipResponse.ip,
-        country: ipResponse.country_name,
-        status: "Neutral"
-      });
-      // res.json({
-      //   body: req.body,
-      // });
+      const bannedCountries = process.env.COUNTRIES.split(",");
+
+      if (bannedCountries.includes(ipResponse.country_name))
+        res.json({
+          ip: ipResponse.ip,
+          country: ipResponse.country_name,
+          status: "Banned",
+        });
+      else
+        res.json({
+          ip: ipResponse.ip,
+          country: ipResponse.country_name,
+          status: "Neutral",
+        });
     } catch (error) {
       console.log(error);
     }
